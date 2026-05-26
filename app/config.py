@@ -79,6 +79,20 @@ class Settings(BaseSettings):
     request_timeout_seconds: int = 30
     cors_allowed_origins: str = ""
 
+    # Proactive Coaching (A2)
+    proactive_enabled: bool = False
+    proactive_language: str = "portuguese"
+    live_client_base_url: str = "https://127.0.0.1:2999"
+    lcu_lockfile_path: Optional[str] = None
+    proactive_http_timeout_seconds: float = 2.0
+    proactive_poll_interval_idle_seconds: float = 1.5
+    proactive_poll_interval_active_seconds: float = 0.5
+    proactive_poll_interval_max_seconds: float = 8.0
+    proactive_event_lookback_seconds: float = 15.0
+    proactive_global_cooldown_seconds: float = 8.0
+    proactive_event_cooldown_seconds: float = 25.0
+    proactive_queue_max_items: int = 3
+
     # MongoDB
     mongodb_uri: str = "mongodb://mongodb:27017/sensii"
     mongodb_db_name: str = "sensii"

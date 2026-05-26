@@ -74,6 +74,15 @@ uvicorn app.main:app --reload
 - Health: `GET /api/v1/health`
 - Ready: `GET /api/v1/ready`
 - Coach: `POST /api/v1/assistant/coach` (audio file, image file, game_stats JSON, optional language)
+- Proactive start: `POST /api/v1/assistant/proactive/start`
+- Proactive stop: `POST /api/v1/assistant/proactive/stop`
+- Proactive next audio: `GET /api/v1/assistant/proactive/next`
+
+## Proactive mode (A2: LCU + Live Client)
+Enable proactive coaching with local polling of the Live Client Data API and LCU.
+Set `PROACTIVE_ENABLED=true` and provide `LIVE_CLIENT_BASE_URL` (default `https://127.0.0.1:2999`)
+and optionally `LCU_LOCKFILE_PATH` in `.env`. Use the proactive endpoints to start/stop
+and pull the next audio response.
 
 ## Contributing
 
