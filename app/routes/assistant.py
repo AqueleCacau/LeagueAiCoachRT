@@ -37,6 +37,7 @@ from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.handlers.audio import validate_and_process_audio
 from app.models.language import SupportedLanguage, get_language_code, get_all_supported_languages
+from app.proactive.service import proactive_service
 from app.users.models import User
 from app.models.game_stats import GameStats
 
@@ -48,12 +49,15 @@ router = APIRouter(prefix="/api/v1", tags=["assistant"])
 async def startup_event():
     """Start background tasks on application startup."""
     session_manager.start_cleanup_task()
+    if settings.proactive_enabled:
+        proactive_service.start()
 
 
 @router.on_event("shutdown")
 async def shutdown_event():
     """Stop background tasks on application shutdown."""
     session_manager.stop_cleanup_task()
+    proactive_service.stop()
 
 
 @router.post("/assistant/coach")
@@ -428,4 +432,44 @@ async def get_suggestions() -> JSONResponse:
         content={
             "suggestions": suggestions,
         },
+    )
+
+
+@router.post("/assistant/proactive/start")
+async def start_proactive_mode(user: User = Depends(get_current_user)) -> JSONResponse:
+    if not settings.proactive_enabled:
+        raise HTTPException(
+            status_code=409,
+            detail="Proactive mode is disabled. Set PROACTIVE_ENABLED=true to use this endpoint.",
+        )
+    proactive_service.register_user(str(user.id))
+    proactive_service.start()
+    return JSONResponse(
+        status_code=200,
+        content={"status": "started"},
+    )
+
+
+@router.post("/assistant/proactive/stop")
+async def stop_proactive_mode(user: User = Depends(get_current_user)) -> JSONResponse:
+    proactive_service.unregister_user(str(user.id))
+    return JSONResponse(
+        status_code=200,
+        content={"status": "stopped"},
+    )
+
+
+@router.get("/assistant/proactive/next")
+async def get_next_proactive_audio(user: User = Depends(get_current_user)) -> Response:
+    audio_item = proactive_service.next_audio(str(user.id))
+    if not audio_item:
+        return Response(status_code=204)
+    headers = {
+        "Content-Disposition": "attachment; filename=proactive_advice.wav",
+        "X-Advice-Text": audio_item.text,
+    }
+    return Response(
+        content=audio_item.audio,
+        media_type="audio/wav",
+        headers=headers,
     )

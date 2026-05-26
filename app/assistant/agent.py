@@ -70,6 +70,8 @@ def get_coach_advice(
     user_question: str,
     game_stats_json: str,
     language: str = "english",
+    use_history: bool = True,
+    update_history: bool = True,
 ) -> str:
     """
     Get coaching advice using the provided session.
@@ -107,13 +109,15 @@ def get_coach_advice(
         # Build messages array starting with history (text-only)
         messages = []
 
-        # Add historical messages (text-only, no game stats)
-        historical_messages = session.message_history.get_all_messages()
-        for msg in historical_messages:
-            messages.append({
-                "role": msg["role"],
-                "content": msg["content"]
-            })
+        historical_messages = []
+        if use_history:
+            # Add historical messages (text-only, no game stats)
+            historical_messages = session.message_history.get_all_messages()
+            for msg in historical_messages:
+                messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
 
         # Add current message with game time, transcribed question + game stats report
         current_message_text = f"[{match_state.formatted_time}] {user_question}\n\n{game_stats_report}\n\n[Respond in {language.capitalize()}]"
@@ -142,12 +146,13 @@ def get_coach_advice(
 
         logger.info("Agent response: %s", advice[:200])
 
-        # Add user question and assistant response to message history
-        session.message_history.add_user_message(f"[{match_state.formatted_time}] {user_question}")
-        session.message_history.add_assistant_message(advice)
+        if update_history:
+            # Add user question and assistant response to message history
+            session.message_history.add_user_message(f"[{match_state.formatted_time}] {user_question}")
+            session.message_history.add_assistant_message(advice)
 
-        logger.info("Added messages to history. New count: %d messages",
-                   session.message_history.get_message_count())
+            logger.info("Added messages to history. New count: %d messages",
+                       session.message_history.get_message_count())
 
         return advice
 
